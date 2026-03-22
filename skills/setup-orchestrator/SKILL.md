@@ -9,11 +9,20 @@ description: "Claude-Code-Tunnels 셋업. 현재 디렉토리에 Project Orchest
 
 ## Source Code
 
-```
-SOURCE_DIR=${CLAUDE_PLUGIN_ROOT}
+Find the plugin installation directory and use it as SOURCE_DIR:
+
+```bash
+SOURCE_DIR=$(find ~/.claude/plugins/cache -maxdepth 3 -name "marketplace.json" 2>/dev/null \
+  | xargs grep -l "claude-tunnels" 2>/dev/null \
+  | head -1 | xargs dirname | xargs dirname)
 ```
 
-이 소스 코드의 `orchestrator/`를 복사한 뒤 환경별 설정만 변경한다.
+If the above returns empty, try:
+```bash
+SOURCE_DIR=$(find ~/.claude/plugins/cache -maxdepth 3 -type d -name "claude-tunnels" 2>/dev/null | head -1)
+```
+
+Copy `orchestrator/` from SOURCE_DIR after setting it.
 
 ## Setup Flow
 
@@ -35,16 +44,18 @@ If `$ARGUMENTS` provides PROJECT_ROOT, use it without asking.
 
 ### Phase 2: Copy Orchestrator Code
 
+Resolve SOURCE_DIR first (see above), then run:
+
 ```bash
 # Copy orchestrator package
-cp -r ${CLAUDE_PLUGIN_ROOT}/orchestrator/ PROJECT_ROOT/orchestrator/
+cp -r SOURCE_DIR/orchestrator/ PROJECT_ROOT/orchestrator/
 
 # Copy rules
 mkdir -p PROJECT_ROOT/.claude/rules/
-cp ${CLAUDE_PLUGIN_ROOT}/templates/rules/*.md PROJECT_ROOT/.claude/rules/
+cp SOURCE_DIR/templates/rules/*.md PROJECT_ROOT/.claude/rules/
 
 # Copy start script
-cp ${CLAUDE_PLUGIN_ROOT}/templates/start-orchestrator.sh.template PROJECT_ROOT/start-orchestrator.sh
+cp SOURCE_DIR/templates/start-orchestrator.sh.template PROJECT_ROOT/start-orchestrator.sh
 chmod +x PROJECT_ROOT/start-orchestrator.sh
 ```
 
