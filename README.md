@@ -1,57 +1,137 @@
-# Claude-Code-Tunnels
+# Claude-Code-Tunnels (Micro-Agent Architecture)
 
 **One channel connection. Unlimited projects. Every workspace runs in its own isolated session.**
 
 Claude-Code-Tunnels is a plugin that creates a **Project Orchestrator (PO)** layer on top of [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code). Send a message from Slack or Telegram — the orchestrator routes to the right projects, plans dependency-aware phases, and delegates each task to a **fresh, isolated Claude session** scoped to that workspace's `.claude/` context. Add as many projects and workspaces as you want: one channel connection scales to any tree depth.
 
+---
+
+## Micro-Agent Architecture (MAA)
+
+Just as **Microservice Architecture (MSA)** decomposed the monolith into independently deployable services — each with its own database, its own boundary, its own scaling — Claude-Code-Tunnels decomposes the single AI session into independently executing **micro-agents**, each with its own workspace, its own `.claude/` context, and its own session lifecycle.
+
+We call this pattern **Micro-Agent Architecture (MAA)**.
+
+```mermaid
+graph LR
+    subgraph MSA["Microservice Architecture · MSA"]
+        MONO["🧱 Monolith<br/><small>single deploy</small>"]
+
+        MONO -->|"decompose"| US
+        MONO -->|"decompose"| OS
+        MONO -->|"decompose"| AS
+
+        subgraph SB["isolated service boundaries"]
+            US["User service"] --> US_DB[("DB")]
+            OS["Order service"] --> OS_DB[("DB")]
+            AS["Auth service"] --> AS_DB[("DB")]
+        end
+    end
+
+    style MSA fill:#E1F5EE,stroke:#0F6E56
+    style SB fill:#E6F1FB,stroke:#185FA5
+    style MONO fill:#F1EFE8,stroke:#5F5E5A,color:#444441
+    style US fill:#9FE1CB,stroke:#0F6E56,color:#04342C
+    style OS fill:#9FE1CB,stroke:#0F6E56,color:#04342C
+    style AS fill:#9FE1CB,stroke:#0F6E56,color:#04342C
+    style US_DB fill:#FAEEDA,stroke:#854F0B,color:#633806
+    style OS_DB fill:#FAEEDA,stroke:#854F0B,color:#633806
+    style AS_DB fill:#FAEEDA,stroke:#854F0B,color:#633806
 ```
- Slack / Telegram
-          │
-    ┌─────▼─────┐
-    │  Channel   │  (receive message, confirm gate)
-    │  Adapter   │
-    └─────┬─────┘
-          │
-    ┌─────▼─────┐
-    │   Router   │  (identify target project)
-    └─────┬─────┘
-          │
-    ┌─────▼─────┐
-    │     PO     │  (read CLAUDE.md → build execution plan with phases)
-    └─────┬─────┘
-          │
-    ┌─────▼──────────────────────────────────────────────────────────┐
-    │  Executor                                                       │
-    │                                                                 │
-    │  Phase 1 (parallel):                                            │
-    │    ┌──────────────────┐    ┌──────────────────┐                │
-    │    │  Claude session  │    │  Claude session  │                │
-    │    │  cwd: ws-a/      │    │  cwd: ws-b/      │                │
-    │    │  ┌─────────────┐ │    │  ┌─────────────┐ │                │
-    │    │  │ ws-a/.claude│ │    │  │ ws-b/.claude│ │  ← injected   │
-    │    │  │  (memory,   │ │    │  │  (memory,   │ │    per session │
-    │    │  │   rules,    │ │    │  │   rules,    │ │                │
-    │    │  │   skills)   │ │    │  │   skills)   │ │                │
-    │    │  └─────────────┘ │    │  └─────────────┘ │                │
-    │    └──────────────────┘    └──────────────────┘                │
-    │                                                                 │
-    │  Phase 2 (after phase 1 completes, with upstream context):      │
-    │    ┌──────────────────┐                                         │
-    │    │  Claude session  │                                         │
-    │    │  cwd: ws-c/      │                                         │
-    │    │  ┌─────────────┐ │                                         │
-    │    │  │ ws-c/.claude│ │  ← injected per session                │
-    │    │  └─────────────┘ │                                         │
-    │    └──────────────────┘                                         │
-    └─────┬───────────────────────────────────────────────────────────┘
-          │
-    ┌─────▼─────┐
-    │ Task Log   │  (.tasks/ with 30-day retention)
-    └─────┬─────┘
-          │
-    ┌─────▼─────┐
-    │  Channel   │  (send formatted results back)
-    └───────────┘
+
+> **monolith ≡ single session · microservice ≡ micro-agent · DB ≡ `.claude/`**
+
+```mermaid
+graph LR
+    subgraph MAA["Micro-Agent Architecture · MAA"]
+        SINGLE["🤖 Single session<br/><small>shared context</small>"]
+
+        SINGLE -->|"decompose"| WA
+        SINGLE -->|"decompose"| WB
+        SINGLE -->|"decompose"| WC
+
+        subgraph IB["isolated session boundaries"]
+            WA["workspace-a agent"] --> WA_CTX[(".claude/")]
+            WB["workspace-b agent"] --> WB_CTX[(".claude/")]
+            WC["workspace-c agent"] --> WC_CTX[(".claude/")]
+        end
+    end
+
+    style MAA fill:#EEEDFE,stroke:#534AB7
+    style IB fill:#E6F1FB,stroke:#185FA5
+    style SINGLE fill:#F1EFE8,stroke:#5F5E5A,color:#444441
+    style WA fill:#CECBF6,stroke:#534AB7,color:#26215C
+    style WB fill:#CECBF6,stroke:#534AB7,color:#26215C
+    style WC fill:#CECBF6,stroke:#534AB7,color:#26215C
+    style WA_CTX fill:#FAECE7,stroke:#993C1D,color:#4A1B0C
+    style WB_CTX fill:#FAECE7,stroke:#993C1D,color:#4A1B0C
+    style WC_CTX fill:#FAECE7,stroke:#993C1D,color:#4A1B0C
+```
+
+### Core Principles — Shared Between MSA and MAA
+
+| Principle | MSA | MAA |
+|-----------|-----|-----|
+| **Unit of decomposition** | Service | Micro-agent (workspace session) |
+| **State ownership** | Each service owns its DB | Each agent loads only its `.claude/` context |
+| **Isolation boundary** | Process / container | Fresh Claude session with `cwd=workspace/` |
+| **Inter-unit communication** | API calls / message queue | Upstream context passing between phases |
+| **Orchestration** | API gateway / service mesh | Project Orchestrator (PO) |
+| **Horizontal scaling** | Add service instances | Add workspaces — tree grows without reconfiguration |
+| **Independent deployment** | Deploy one service without touching others | Execute one workspace without affecting others |
+| **Failure isolation** | One service crashes, others survive | One agent fails, other phases continue with partial results |
+
+> **The key insight**: In MSA, the API gateway routes requests to the right service. In MAA, the Project Orchestrator routes tasks to the right workspace agent. In both architectures, the orchestration layer is the only component that needs to understand the full topology — individual units focus on their own bounded context.
+
+---
+
+```mermaid
+flowchart TB
+    INPUT["💬 Slack / Telegram"]
+    ADAPTER["Channel Adapter<br/><small>receive message, confirm gate</small>"]
+    ROUTER["Router<br/><small>identify target project</small>"]
+    PO["PO<br/><small>read CLAUDE.md → build execution plan with phases</small>"]
+
+    INPUT --> ADAPTER --> ROUTER --> PO
+
+    subgraph EXEC["Executor"]
+        subgraph P1["Phase 1 · parallel"]
+            S_A["Claude session<br/><small>cwd: ws-a/</small>"]
+            S_B["Claude session<br/><small>cwd: ws-b/</small>"]
+            CTX_A[".claude/<br/><small>memory, rules, skills</small>"]
+            CTX_B[".claude/<br/><small>memory, rules, skills</small>"]
+            S_A -.- CTX_A
+            S_B -.- CTX_B
+        end
+
+        subgraph P2["Phase 2 · after phase 1, with upstream context"]
+            S_C["Claude session<br/><small>cwd: ws-c/</small>"]
+            CTX_C[".claude/<br/><small>memory, rules, skills</small>"]
+            S_C -.- CTX_C
+        end
+
+        P1 -->|"upstream context"| P2
+    end
+
+    PO --> EXEC
+    EXEC --> LOG["📋 Task Log<br/><small>.tasks/ with 30-day retention</small>"]
+    LOG --> OUTPUT["📤 Channel<br/><small>send formatted results back</small>"]
+
+    style INPUT fill:#F1EFE8,stroke:#5F5E5A,color:#444441
+    style ADAPTER fill:#E6F1FB,stroke:#185FA5,color:#0C447C
+    style ROUTER fill:#E6F1FB,stroke:#185FA5,color:#0C447C
+    style PO fill:#EEEDFE,stroke:#534AB7,color:#3C3489
+    style EXEC fill:#E1F5EE,stroke:#0F6E56
+    style P1 fill:#E6F1FB,stroke:#185FA5
+    style P2 fill:#FAEEDA,stroke:#854F0B
+    style S_A fill:#CECBF6,stroke:#534AB7,color:#26215C
+    style S_B fill:#CECBF6,stroke:#534AB7,color:#26215C
+    style S_C fill:#CECBF6,stroke:#534AB7,color:#26215C
+    style CTX_A fill:#FAECE7,stroke:#993C1D,color:#4A1B0C
+    style CTX_B fill:#FAECE7,stroke:#993C1D,color:#4A1B0C
+    style CTX_C fill:#FAECE7,stroke:#993C1D,color:#4A1B0C
+    style LOG fill:#FAEEDA,stroke:#854F0B,color:#633806
+    style OUTPUT fill:#F1EFE8,stroke:#5F5E5A,color:#444441
 ```
 
 ---
@@ -632,6 +712,99 @@ tail -f /tmp/orchestrator-$(date +%Y%m%d).log
 # Stop
 kill $(pgrep -f "orchestrator.main")
 ```
+
+---
+
+## Scaling Beyond — Hierarchical Orchestration
+
+A single PO manages one project tree. But what if your organization has dozens of independent systems — infrastructure, data pipelines, ML platforms, client services — each with its own orchestrator?
+
+Stack another layer. A **Meta-Orchestrator** sits above multiple PO instances, each running its own project tree. One channel connection, one message — the meta layer routes to the right PO, which routes to the right project, which delegates to the right workspace. The tree grows upward just as easily as it grows downward.
+
+```mermaid
+flowchart TB
+    USER["💬 Single channel connection<br/><small>Slack / Telegram / Teams / Others </small>"]
+
+    META["🧠 Meta-Orchestrator<br/><small>route across systems</small>"]
+
+    USER --> META
+
+    subgraph SYS_A["System A · Infrastructure"]
+        PO_A["PO"]
+        subgraph PA_WS["workspaces"]
+            A1["terraform"]
+            A2["k8s-config"]
+            A3["monitoring"]
+        end
+        PO_A --> PA_WS
+    end
+
+    subgraph SYS_B["System B · Data Platform"]
+        PO_B["PO"]
+        subgraph PB_WS["workspaces"]
+            B1["etl-pipeline"]
+            B2["warehouse"]
+            B3["dashboards"]
+        end
+        PO_B --> PB_WS
+    end
+
+    subgraph SYS_C["System C · Product"]
+        PO_C["PO"]
+        subgraph PC_WS["workspaces"]
+            C1["backend"]
+            C2["frontend"]
+            C3["mobile"]
+        end
+        PO_C --> PC_WS
+    end
+
+    subgraph SYS_D["System D · ML Platform"]
+        PO_D["PO"]
+        subgraph PD_WS["workspaces"]
+            D1["training"]
+            D2["serving"]
+            D3["eval"]
+        end
+        PO_D --> PD_WS
+    end
+
+    META --> PO_A
+    META --> PO_B
+    META --> PO_C
+    META --> PO_D
+
+    style USER fill:#F1EFE8,stroke:#5F5E5A,color:#444441
+    style META fill:#FAEEDA,stroke:#854F0B,color:#633806
+    style SYS_A fill:#E1F5EE,stroke:#0F6E56
+    style SYS_B fill:#E6F1FB,stroke:#185FA5
+    style SYS_C fill:#EEEDFE,stroke:#534AB7
+    style SYS_D fill:#FAECE7,stroke:#993C1D
+    style PA_WS fill:#E1F5EE,stroke:#0F6E56
+    style PB_WS fill:#E6F1FB,stroke:#185FA5
+    style PC_WS fill:#EEEDFE,stroke:#534AB7
+    style PD_WS fill:#FAECE7,stroke:#993C1D
+    style PO_A fill:#9FE1CB,stroke:#0F6E56,color:#04342C
+    style PO_B fill:#B5D4F4,stroke:#185FA5,color:#042C53
+    style PO_C fill:#CECBF6,stroke:#534AB7,color:#26215C
+    style PO_D fill:#F5C4B3,stroke:#993C1D,color:#4A1B0C
+    style A1 fill:#9FE1CB,stroke:#0F6E56,color:#04342C
+    style A2 fill:#9FE1CB,stroke:#0F6E56,color:#04342C
+    style A3 fill:#9FE1CB,stroke:#0F6E56,color:#04342C
+    style B1 fill:#B5D4F4,stroke:#185FA5,color:#042C53
+    style B2 fill:#B5D4F4,stroke:#185FA5,color:#042C53
+    style B3 fill:#B5D4F4,stroke:#185FA5,color:#042C53
+    style C1 fill:#CECBF6,stroke:#534AB7,color:#26215C
+    style C2 fill:#CECBF6,stroke:#534AB7,color:#26215C
+    style C3 fill:#CECBF6,stroke:#534AB7,color:#26215C
+    style D1 fill:#F5C4B3,stroke:#993C1D,color:#4A1B0C
+    style D2 fill:#F5C4B3,stroke:#993C1D,color:#4A1B0C
+    style D3 fill:#F5C4B3,stroke:#993C1D,color:#4A1B0C
+```
+
+This is the same principle that makes MAA scale: **each layer only knows about its direct children**. The Meta-Orchestrator doesn't know what workspaces exist inside System B — it only knows that System B's PO can handle data platform tasks. System B's PO doesn't know System A exists. Bounded context at every level, just like microservices behind an API gateway hierarchy.
+
+> **One channel. One message. Any depth.** _"Retrain the recommendation model, update the serving endpoint, and roll it out to staging"_ — the meta layer routes to the ML Platform PO (training → serving) and the Infrastructure PO (k8s rollout), each decomposing their part into phased workspace tasks.
 
 ---
 
