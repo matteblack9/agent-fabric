@@ -182,33 +182,51 @@ Two properties make this scale:
 ### Delegation Flow
 
 ```mermaid
-flowchart TB
-    MSG["💬 User message via Slack / Telegram"]
-    MSG --> CONFIRM["🔒 ConfirmGate<br/><i>User confirms before execution</i>"]
-    CONFIRM --> ROUTER["🔍 Router · Sonnet<br/><i>Identify target project(s)</i>"]
-    ROUTER --> PO["🧠 Project Orchestrator · Opus<br/><i>Analyze dependencies → build phased plan</i>"]
+sequenceDiagram
+    actor User
+    participant CH as Channel Adapter
+    participant CG as ConfirmGate
+    participant RT as Router · Sonnet
+    participant PO as PO · Opus
+    participant EX as Executor
+    participant WS as Workspaces
+    participant LOG as Task Log
 
-    PO --> P1["⚡ Phase 1"]
-    PO --> P2["⚡ Phase 2"]
-    PO --> P3["⚡ Phase 3"]
+    User->>CH: 💬 message via Slack / Telegram
+    CH->>CG: register request
+    CG-->>User: "Confirm execution? (yes/cancel)"
+    User->>CG: yes
 
-    P1 --> WS_A["workspace-a"]
-    P1 --> WS_B["workspace-b"]
-    P2 --> WS_C["workspace-c"]
-    P3 --> WS_D["workspace-d"]
-    P3 --> WS_E["workspace-e"]
+    CG->>RT: confirmed message
+    RT->>RT: identify target project(s)
+    RT->>PO: project list
 
-    WS_A & WS_B -.->|"upstream context"| P2
-    WS_C -.->|"upstream context"| P3
+    PO->>PO: read CLAUDE.md → analyze dependencies
+    PO->>EX: phased execution plan
 
-    WS_D & WS_E --> LOG["📋 Task Log · .tasks/"]
-    LOG --> RESULT["📤 Formatted results → Channel"]
+    rect rgb(225, 245, 238)
+        Note over EX,WS: Phase 1 · parallel
+        EX->>WS: spawn session (cwd: ws-a/, .claude/ injected)
+        EX->>WS: spawn session (cwd: ws-b/, .claude/ injected)
+        WS-->>EX: results a, b
+    end
 
-    style P1 fill:#E1F5EE,stroke:#0F6E56,color:#085041
-    style P2 fill:#E6F1FB,stroke:#185FA5,color:#0C447C
-    style P3 fill:#FAEEDA,stroke:#854F0B,color:#633806
-    style PO fill:#EEEDFE,stroke:#534AB7,color:#3C3489
-    style ROUTER fill:#F1EFE8,stroke:#5F5E5A,color:#444441
+    rect rgb(230, 241, 251)
+        Note over EX,WS: Phase 2 · with upstream context from Phase 1
+        EX->>WS: spawn session (cwd: ws-c/, .claude/ + upstream context)
+        WS-->>EX: result c
+    end
+
+    rect rgb(250, 238, 218)
+        Note over EX,WS: Phase 3 · parallel
+        EX->>WS: spawn session (cwd: ws-d/)
+        EX->>WS: spawn session (cwd: ws-e/)
+        WS-->>EX: results d, e
+    end
+
+    EX->>LOG: write to .tasks/{date}/{project}/
+    LOG-->>CH: formatted results
+    CH-->>User: 📤 results via channel
 ```
 
 > **Key insight**: Phase 1 workspaces run **in parallel**. Phase 2 waits for Phase 1 to complete and receives its results as **upstream context**. This means downstream workspaces always have the full picture of what changed upstream.
