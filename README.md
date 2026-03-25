@@ -455,38 +455,45 @@ your-projects/
 
 ### Session State Machine (2-Step Confirmation)
 
-```
-[User message received]
-    │
-[IDLE] → create_request() → send 1st confirm message
-    │
-[PENDING_CONFIRM] ← 1st confirm: "Did I understand correctly?"
-    ├── "yes"    → plan_request()
-    │               ├── clarification_needed → IDLE
-    │               ├── direct_answer        → send result → AWAITING_FOLLOWUP
-    │               ├── direct_request       → execute → AWAITING_FOLLOWUP
-    │               └── planned (workspace modification)
-    │                       │
-    │                       ▼
-    │               [PENDING_EXECUTION_CONFIRM] ← 2nd confirm: show plan
-    │                       ├── "yes"    → execute plan → EXECUTING
-    │                       ├── "cancel" → discard plan → IDLE
-    │                       └── other    → discard plan → treat as new request
-    │
-    ├── "cancel" → cancel request → IDLE
-    └── other    → treat as new request
-    │
-[EXECUTING] ← workspace execution in progress
-    │
-[AWAITING_FOLLOWUP] ← results sent
-    ├── "done"/"end" → reset session → IDLE
-    └── other        → new request (context retained)
+```mermaid
+stateDiagram-v2
+    [*] --> IDLE
+
+    IDLE --> PENDING_CONFIRM : user message → create_request()
+
+    state PENDING_CONFIRM {
+        direction LR
+        [*] --> wait_1st : 1st confirm\n"Did I understand correctly?"
+    }
+
+    PENDING_CONFIRM --> IDLE : "cancel"
+    PENDING_CONFIRM --> IDLE : other text → treat as new request
+    PENDING_CONFIRM --> IDLE : "yes" → clarification_needed
+
+    PENDING_CONFIRM --> AWAITING_FOLLOWUP : "yes" → direct_answer\n(no code change)
+    PENDING_CONFIRM --> AWAITING_FOLLOWUP : "yes" → direct_request\n(execute immediately)
+
+    PENDING_CONFIRM --> PENDING_EXEC_CONFIRM : "yes" → planned\n(workspace modification)
+
+    state PENDING_EXEC_CONFIRM {
+        direction LR
+        [*] --> wait_2nd : 2nd confirm\nshow execution plan
+    }
+
+    PENDING_EXEC_CONFIRM --> EXECUTING : "yes" → execute plan
+    PENDING_EXEC_CONFIRM --> IDLE : "cancel" → discard plan
+    PENDING_EXEC_CONFIRM --> IDLE : other text → discard plan
+
+    EXECUTING --> AWAITING_FOLLOWUP : results sent
+
+    AWAITING_FOLLOWUP --> IDLE : "done" / "end" → reset session
+    AWAITING_FOLLOWUP --> IDLE : other text → new request\n(context retained)
 ```
 
 The 2-step confirmation ensures that:
-- **1st confirm**: User verifies the request was understood correctly
-- **2nd confirm** (workspace modifications only): User reviews the execution plan before code changes are made
-- Non-modifying requests (`direct_answer`, `direct_request`) skip the 2nd confirm
+- **1st confirm** (`PENDING_CONFIRM`): User verifies the request was understood correctly
+- **2nd confirm** (`PENDING_EXEC_CONFIRM`, workspace modifications only): User reviews the execution plan before code changes are made
+- Non-modifying requests (`direct_answer`, `direct_request`) skip the 2nd confirm and go straight to `AWAITING_FOLLOWUP`
 
 ### Execution Flow
 
