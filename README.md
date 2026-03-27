@@ -22,18 +22,22 @@ It began as an expansion of [claude-code-tunnels](https://github.com/matteblack9
 
 This version keeps the Python control plane, but expands execution beyond a single-runtime model:
 
-- `claude` runs through the existing Python `claude-agent-sdk`
-- `cursor` runs through the local `cursor-agent` CLI
-- `codex` runs through a local Node bridge that uses the official `@openai/codex-sdk`
-- `opencode` runs through the same bridge with `@opencode-ai/sdk`
-- initial setup is handled by a Textual TUI that proposes the `PO` root, `ARCHIVE` path, workspace candidates, WO runtime assignments, and root guidance files
+| Area | Runtime / Component | Behavior |
+|------|----------------------|----------|
+| Execution | `claude` | Runs through the existing Python `claude-agent-sdk` |
+| Execution | `cursor` | Runs through the local `cursor-agent` CLI |
+| Execution | `codex` | Runs through a local Node bridge that uses the official `@openai/codex-sdk` |
+| Execution | `opencode` | Runs through the same bridge with `@opencode-ai/sdk` |
+| Setup | Initial setup | Handled by a Textual TUI that proposes the `PO` root, `ARCHIVE` path, workspace candidates, WO runtime assignments, and root guidance files |
 
 Guidance is runtime-aware:
 
-- `claude` prefers `CLAUDE.md` and existing `.claude/` memory/rules
-- `cursor` prefers `.cursor/rules`, also reads `AGENTS.md`, `CLAUDE.md`, and legacy `.cursorrules`
-- `codex` prefers `AGENTS.md` and explicit repo instructions
-- `opencode` prefers `AGENTS.md`, can use `opencode.json` and `.opencode/skills/`, and requires provider login before execution
+| Runtime | Preferred guidance | Additional behavior |
+|---------|---------------------|---------------------|
+| `claude` | `CLAUDE.md`, existing `.claude/` memory/rules | Prioritizes Claude-specific guidance files and memory |
+| `cursor` | `.cursor/rules` | Also reads `AGENTS.md`, `CLAUDE.md`, and legacy `.cursorrules` |
+| `codex` | `AGENTS.md` | Also follows explicit repo instructions |
+| `opencode` | `AGENTS.md` | Can use `opencode.json` and `.opencode/skills/`; requires provider login before execution |
 
 Short glossary:
 
