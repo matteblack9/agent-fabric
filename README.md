@@ -16,6 +16,9 @@
 
 ---
 
+<img width="512" height="250" alt="image" src="https://github.com/user-attachments/assets/2496644f-db3c-454c-9ca2-5eaa1d1a41b0" />
+<br><br>
+
 Agent Fabric is an orchestration layer for project trees.  <br>
 A message arrives from Slack or Telegram, <br>
 the **Project Orchestrator (PO)** routes it, builds a dependency-aware execution plan, <br>
