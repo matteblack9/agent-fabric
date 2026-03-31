@@ -24,6 +24,8 @@ A message arrives from Slack or Telegram, <br>
 the **Project Orchestrator (PO)** routes it, builds a dependency-aware execution plan, <br>
 and delegates each workspace task to a **Workspace Orchestrator (WO)**. <br>
 
+---
+
 It began as an expansion of [claude-code-tunnels](https://github.com/matteblack9/claude-code-tunnels) and evolved into a runtime-neutral control plane for multi-workspace agent execution.
 
 This version keeps the Python control plane, but expands execution beyond a single-runtime model:
