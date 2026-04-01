@@ -1,7 +1,7 @@
 {
-  "name": "agent-fabric",
+  "name": "coding-agent-fabric",
   "owner": {
-    "name": "Agent Fabric"
+    "name": "Coding Agent Fabric"
   },
   "metadata": {
     "description": "A control plane for coding agents across workspaces, channels, and runtimes.",
@@ -9,20 +9,20 @@
   },
   "plugins": [
     {
-      "name": "agent-fabric",
+      "name": "coding-agent-fabric",
       "source": {
         "source": "github",
-        "repo": "matteblack9/agent-fabric"
+        "repo": "matteblack9/coding-agent-fabric"
       },
         "description": "Route tasks from Slack or Telegram to the right project, execute them in dependency-aware phases, and delegate each workspace to Claude, Cursor, Codex, or OpenCode.",
       "version": "1.1.0",
       "author": {
-        "name": "Agent Fabric"
+        "name": "Coding Agent Fabric"
       },
-      "homepage": "https://github.com/matteblack9/agent-fabric",
-      "repository": "https://github.com/matteblack9/agent-fabric",
+      "homepage": "https://github.com/matteblack9/coding-agent-fabric",
+      "repository": "https://github.com/matteblack9/coding-agent-fabric",
       "license": "MIT",
-      "keywords": ["agent-fabric", "orchestrator", "slack", "telegram", "multi-runtime", "workspace"],
+      "keywords": ["coding-agent-fabric", "agent-fabric", "orchestrator", "slack", "telegram", "multi-runtime", "workspace"],
       "category": "productivity"
     }
   ]

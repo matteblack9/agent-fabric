@@ -134,7 +134,7 @@ export async function runOpencode(params) {
 
   const session = await client.session.create({
     query: { directory: params.cwd },
-    body: { title: params.title || "agent-fabric" },
+    body: { title: params.title || "coding-agent-fabric" },
   });
   const sessionId = session?.data?.id;
   if (!sessionId) {

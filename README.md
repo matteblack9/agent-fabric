@@ -1,4 +1,4 @@
-# Agent Fabric (Micro-Agent Architecture Manager)
+# Coding Agent Fabric (Micro-Agent Architecture Manager)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
@@ -12,21 +12,21 @@
 **One channel connection.** 
 **One Project Orchestrator.** <br>
 **Every workspace runs through its own isolated Workspace Orchestrator.** <br> 
-**Manage your project wherever you are. Your agent-fabric can do your work when you off.**
+**Manage your project wherever you are. Coding Agent Fabric can keep work moving even when you're away.**
 
 ---
 
 <img width="512" height="250" alt="image" src="https://github.com/user-attachments/assets/2496644f-db3c-454c-9ca2-5eaa1d1a41b0" />
 <br><br>
 
-Agent Fabric is an orchestration layer for project trees.  <br>
+Coding Agent Fabric is an orchestration layer for project trees.  <br>
 A message arrives from Slack or Telegram, <br>
 the **Project Orchestrator (PO)** routes it, builds a dependency-aware execution plan, <br>
 and delegates each workspace task to a **Workspace Orchestrator (WO)**. <br>
 
 ---
 
-It began as an expansion of [claude-code-tunnels](https://github.com/matteblack9/claude-code-tunnels) and evolved into a runtime-neutral control plane for multi-workspace agent execution.
+Coding Agent Fabric began as an expansion of [claude-code-tunnels](https://github.com/matteblack9/claude-code-tunnels) and evolved into a runtime-neutral control plane for multi-workspace agent execution.
 
 This version keeps the Python control plane, but expands execution beyond a single-runtime model:
 
@@ -59,7 +59,7 @@ Short glossary:
 ## Micro-Agent Architecture (MAA)
 
 Just as **Microservice Architecture (MSA)** decomposed the monolith into independently deployable services, <br>
-Agent Fabric decomposes one large assistant session into independently executing workspace workers. Each WO owns one workspace, one runtime, and one bounded context.
+Coding Agent Fabric decomposes one large assistant session into independently executing workspace workers. Each WO owns one workspace, one runtime, and one bounded context.
 
 We call this pattern **Micro-Agent Architecture (MAA)**.
 
@@ -177,9 +177,9 @@ flowchart TB
 
 ## Why This Over Claude Code's Built-in Channels?
 
-Claude Code has a Channels feature that forwards chat messages into a running CLI session. Agent Fabric solves a different problem.
+Claude Code has a Channels feature that forwards chat messages into a running CLI session. Coding Agent Fabric solves a different problem.
 
-| Feature | Claude Code Channels | Agent Fabric |
+| Feature | Claude Code Channels | Coding Agent Fabric |
 |---------|---------------------|---------------------|
 | **Architecture** | Single CLI session, single cwd | Always-on PO with phased workspace orchestration |
 | **Session model** | Bound to a running session | Background daemon with per-workspace execution |
@@ -191,13 +191,13 @@ Claude Code has a Channels feature that forwards chat messages into a running CL
 | **Confirm gate** | None | Built-in confirm/cancel flow |
 | **Setup** | Connect a channel to one session | TUI discovers PO root, workspaces, and runtimes |
 
-**In short**: Channels is a message bridge into one session. Agent Fabric is an orchestration layer that can coordinate multiple workspaces and multiple runtimes from one shared channel.
+**In short**: Channels is a message bridge into one session. Coding Agent Fabric is an orchestration layer that can coordinate multiple workspaces and multiple runtimes from one shared channel.
 
 ---
 
 ## Team Collaboration — Shared Channel, Zero Handoff
 
-Traditional setups tie the assistant to one person's laptop or one long-running terminal session. Agent Fabric flips that: the orchestrator lives in the shared channel, not in one person's shell.
+Traditional setups tie the assistant to one person's laptop or one long-running terminal session. Coding Agent Fabric flips that: the orchestrator lives in the shared channel, not in one person's shell.
 
 ```mermaid
 %%{init: {"theme":"base","themeVariables":{"primaryColor":"#E6F1FB","primaryTextColor":"#0F172A","primaryBorderColor":"#185FA5","secondaryColor":"#EDE9FE","secondaryTextColor":"#1F2937","secondaryBorderColor":"#7C3AED","tertiaryColor":"#ECFDF5","tertiaryTextColor":"#14532D","tertiaryBorderColor":"#16A34A","lineColor":"#475569","clusterBkg":"#F8FAFC","clusterBorder":"#94A3B8","noteBkgColor":"#FEF3C7","noteTextColor":"#78350F","noteBorderColor":"#D97706","activationBkgColor":"#DBEAFE","activationBorderColor":"#2563EB","sequenceNumberColor":"#0F172A"}}}%%
@@ -235,8 +235,8 @@ flowchart TB
 
 **No handoff required.** The orchestrator already knows workspace structure through `orchestrator.yaml`, shared instructions in `AGENTS.md`, Claude-specific context in `CLAUDE.md` or `.claude/`, Cursor-specific rules in `.cursor/rules` or `.cursorrules`, OpenCode-specific config in `opencode.json` or `.opencode/`, and workspace-specific runtime settings. A teammate does not need your local terminal state or your memory of "how this repo works."
 
-| Scenario | Without Tunnels | With Tunnels |
-|----------|----------------|--------------|
+| Scenario | Without Coding Agent Fabric | With Coding Agent Fabric |
+|----------|----------------------|-------------------|
 | You're on vacation | Team waits or guesses | Team uses the shared channel |
 | New team member joins | Needs project-by-project onboarding | Asks the channel and gets routed correctly |
 | Urgent hotfix at 3 AM | Someone SSHs in and runs commands manually | Anyone with channel access can trigger the pipeline |
@@ -441,14 +441,14 @@ flowchart LR
 ## Quick Start
 
 ```bash
-git clone https://github.com/matteblack9/agent-fabric.git
-cd agent-fabric
+git clone https://github.com/matteblack9/coding-agent-fabric.git
+cd coding-agent-fabric
 
 ./setup.sh
 ./start-orchestrator.sh --fg
 ```
 
-The repository is published as `agent-fabric`.
+The repository is published as `coding-agent-fabric`.
 
 The setup wizard:
 
